@@ -35,18 +35,6 @@ public class PlayerHandler implements IPlayerManager
     }
 
     @ApiStatus.Internal
-    public void onClientConnect(SocketAddress addr, NameAndId profile, @Nullable Component result)
-    {
-        if (!this.handlers.isEmpty())
-        {
-            for (IPlayerListener handler : this.handlers)
-            {
-                handler.onClientConnect(addr, profile, result);
-            }
-        }
-    }
-
-    @ApiStatus.Internal
     public void onPlayerJoin(SocketAddress addr, GameProfile profile, ServerPlayer player)
     {
         if (!this.handlers.isEmpty())
@@ -54,42 +42,6 @@ public class PlayerHandler implements IPlayerManager
             for (IPlayerListener handler : this.handlers)
             {
                 handler.onPlayerJoin(addr, profile, player);
-            }
-        }
-    }
-
-    @ApiStatus.Internal
-    public void onPlayerRespawn(ServerPlayer newPlayer, ServerPlayer oldPlayer)
-    {
-        if (!this.handlers.isEmpty())
-        {
-            for (IPlayerListener handler : this.handlers)
-            {
-                handler.onPlayerRespawn(newPlayer, oldPlayer);
-            }
-        }
-    }
-
-    @ApiStatus.Internal
-    public void onPlayerOp(NameAndId profile, UUID uuid, @Nullable ServerPlayer player)
-    {
-        if (!this.handlers.isEmpty())
-        {
-            for (IPlayerListener handler : this.handlers)
-            {
-                handler.onPlayerOp(profile, uuid, player);
-            }
-        }
-    }
-
-    @ApiStatus.Internal
-    public void onPlayerDeOp(NameAndId profile, UUID uuid, @Nullable ServerPlayer player)
-    {
-        if (!this.handlers.isEmpty())
-        {
-            for (IPlayerListener handler : this.handlers)
-            {
-                handler.onPlayerDeOp(profile, uuid, player);
             }
         }
     }
