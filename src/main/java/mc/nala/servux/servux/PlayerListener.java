@@ -1,0 +1,69 @@
+package mc.nala.servux.servux;
+
+import com.mojang.authlib.GameProfile;
+import mc.nala.servux.dataproviders.*;
+import mc.nala.servux.interfaces.IPlayerListener;
+import java.net.SocketAddress;
+import net.minecraft.server.level.ServerPlayer;
+
+public class PlayerListener implements IPlayerListener
+{
+    @Override
+    public void onPlayerJoin(SocketAddress addr, GameProfile profile, ServerPlayer player)
+    {
+        // todo -- Stop automatically registering clients
+//        if (HudDataProvider.INSTANCE.isEnabled())
+//        {
+//            HudDataProvider.INSTANCE.register(player);
+//        }
+//
+//        if (StructureDataProvider.INSTANCE.isEnabled())
+//        {
+//            StructureDataProvider.INSTANCE.register(player);
+//        }
+//
+//        if (EntitiesDataProvider.INSTANCE.isEnabled())
+//        {
+//            EntitiesDataProvider.INSTANCE.register(player);
+//        }
+//
+//        if (LitematicsDataProvider.INSTANCE.isEnabled())
+//        {
+//            LitematicsDataProvider.INSTANCE.registerPlayer(player);
+//        }
+//
+//        if (TweaksDataProvider.INSTANCE.isEnabled())
+//        {
+//            TweaksDataProvider.INSTANCE.register(player);
+//        }
+    }
+
+    @Override
+    public void onPlayerLeave(ServerPlayer player)
+    {
+        if (HudDataProvider.INSTANCE.isEnabled())
+        {
+            HudDataProvider.INSTANCE.removePlayer(player);
+        }
+
+        if (StructureDataProvider.INSTANCE.isEnabled())
+        {
+            StructureDataProvider.INSTANCE.removePlayer(player);
+        }
+
+        if (EntitiesDataProvider.INSTANCE.isEnabled())
+        {
+            EntitiesDataProvider.INSTANCE.removePlayer(player);
+        }
+
+        if (LitematicsDataProvider.INSTANCE.isEnabled())
+        {
+            LitematicsDataProvider.INSTANCE.removePlayer(player);
+        }
+
+        if (TweaksDataProvider.INSTANCE.isEnabled())
+        {
+            TweaksDataProvider.INSTANCE.removePlayer(player);
+        }
+    }
+}

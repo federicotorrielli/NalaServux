@@ -1,0 +1,6 @@
+name: NalaServux
+version: '${version}'
+main: mc.nala.servux.paper.NalaServuxPlugin
+api-version: '${mcVersion}'
+load: POSTWORLD
+description: Servux for Paper, built for Nala Mc.

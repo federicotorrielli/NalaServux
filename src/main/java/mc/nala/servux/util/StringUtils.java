@@ -1,0 +1,48 @@
+package mc.nala.servux.util;
+
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.Identifier;
+
+import mc.nala.servux.dataproviders.ServuxConfigProvider;
+
+public class StringUtils
+{
+    public static String removeDefaultMinecraftNamespace(Identifier settingId)
+    {
+        return settingId.getNamespace().equals("minecraft") ? settingId.getPath() : settingId.toString();
+    }
+
+    public static String translateAsString(String translationKey, Object... args)
+    {
+//        return i18nLang.getInstance().translateAsString(translationKey, args);
+        if (ServuxConfigProvider.LANG != null)
+        {
+            return ServuxConfigProvider.LANG.translate(translationKey, args);
+        }
+
+        throw new IllegalStateException("LANG Manager is null");
+    }
+
+    /**
+     * Can replace I18n
+     * @param translationKey (key)
+     * @param args (...args)
+     */
+    public static MutableComponent translate(String translationKey, Object... args)
+    {
+//        return i18nLang.getInstance().translate(translationKey, args);
+        if (ServuxConfigProvider.LANG != null)
+        {
+            return ServuxConfigProvider.LANG.translateAsText(translationKey, args);
+        }
+
+        throw new IllegalStateException("LANG Manager is null");
+    }
+
+    public static CommandSyntaxException translateError(String translationKey, Object... args)
+    {
+        return new SimpleCommandExceptionType(translate(translationKey, args)).create();
+    }
+}
