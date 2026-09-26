@@ -37,7 +37,6 @@ import mc.nala.servux.scheduler.tasks.TaskPasteSchematicPerChunkDirect;
 import mc.nala.servux.schematic.LitematicaSchematic;
 import mc.nala.servux.schematic.placement.SchematicPlacement;
 import mc.nala.servux.schematic.selection.Box;
-import mc.nala.servux.schematic.transmit.SchematicBufferManager;
 import mc.nala.servux.settings.IServuxSetting;
 import mc.nala.servux.settings.ServuxBoolSetting;
 import mc.nala.servux.settings.ServuxIntSetting;
@@ -83,8 +82,6 @@ public class LitematicsDataProvider extends DataProviderBase
 
 	private final List<UUID> registeredPlayers = new ArrayList<>();
 	private final List<UUID> invalidPlayers = new ArrayList<>();
-	private final SchematicBufferManager bufferManager = new SchematicBufferManager();
-	private final Path transmitDir;
 
 	protected LitematicsDataProvider()
 	{
@@ -99,8 +96,6 @@ public class LitematicsDataProvider extends DataProviderBase
 		this.metadata.putInt("version", this.getProtocolVersion());
 		this.metadata.putString("servux", Reference.MOD_STRING);
 
-		// Litematic-Transmit Dir
-		this.transmitDir = this.getTransmitDir();
 	}
 
 	@Override
@@ -134,44 +129,6 @@ public class LitematicsDataProvider extends DataProviderBase
 	public IPluginServerPlayHandler<?> getPacketHandler()
 	{
 		return HANDLER;
-	}
-
-	public SchematicBufferManager getBufferManager()
-	{
-		return this.bufferManager;
-	}
-
-	public Path getTransmitDir()
-	{
-		Path dir = this.transmitDir != null ? this.transmitDir : DataProviderManager.INSTANCE.getRootDir().resolve("schematics").normalize();
-
-		if (!Files.exists(dir) || !Files.isDirectory(dir))
-		{
-			try
-			{
-				if (Files.exists(dir))
-				{
-					Files.delete(dir);
-				}
-
-				Files.createDirectory(dir);
-				Servux.LOGGER.warn("getTransmitDir(): Created schematic transmit directory '{}'", dir.toAbsolutePath().toString());
-			}
-			catch (IOException err)
-			{
-				Servux.LOGGER.error("getTransmitDir(): Fatal exception creating schematic transmit dir '{}'; {}", dir.toAbsolutePath().toString(), err.getLocalizedMessage());
-				throw new RuntimeException(err);
-			}
-		}
-
-		if (!Files.isWritable(dir))
-		{
-			Servux.LOGGER.error("Schematic transmit directory '{}'; is not writeable.", dir.toAbsolutePath().toString());
-		}
-
-		Servux.debugLog("getTransmitDir(): Schematic transmit directory debug '{}'", dir.toAbsolutePath().toString());
-
-		return dir;
 	}
 
 	@Override
@@ -229,7 +186,6 @@ public class LitematicsDataProvider extends DataProviderBase
 		UUID uuid = player.getUUID();
 
 		HANDLER.resetFailures(this.getNetworkChannel(), player);
-		this.getBufferManager().removePlayer(player);
 		this.registeredPlayers.remove(uuid);
 	}
 
