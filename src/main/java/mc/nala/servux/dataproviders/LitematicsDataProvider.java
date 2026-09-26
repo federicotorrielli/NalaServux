@@ -648,68 +648,6 @@ public class LitematicsDataProvider extends DataProviderBase
 		}
 	}
 
-	public void handleClientPasteRequestPair(ServerPlayer player, Pair<LitematicaSchematic, CompoundData> schemPair)
-	{
-		if (!this.isPlayerRegistered(player) || !this.isEnabled() ||
-			schemPair == null || schemPair.getLeft() == null ||
-			schemPair.getRight() == null || schemPair.getRight().isEmpty())
-		{
-			return;
-		}
-
-		if (!this.hasPermission(player) || !this.hasPermissionsForPaste(player))
-		{
-			Servux.debugLog("litematic_data: Denying Litematic Paste for player {}, Insufficient Permissions.", player.getName().tryCollapseToString());
-			player.sendSystemMessage(StringUtils.translate("servux.litematics.error.insufficent_for_paste"));
-			return;
-		}
-		if (!player.isCreative())
-		{
-			Servux.debugLog("litematic_data: Denying Litematic Paste for player {}, Player is not in Creative Mode.", player.getName().tryCollapseToString());
-			player.sendSystemMessage(StringUtils.translate("servux.litematics.error.creative_required"));
-			return;
-		}
-
-		CompoundData tags = schemPair.getRight();
-
-		if (schemPair.getLeft() != null)
-		{
-			Servux.debugLog("litematic_data: Servux Paste (Pair) request from player {}", player.getName().tryCollapseToString());
-			final long timeStart = System.currentTimeMillis();
-			SchematicPlacement placement = SchematicPlacement.createFromData(schemPair.getLeft(), tags);
-			ReplaceBehavior replaceMode = ReplaceBehavior.fromStringStatic(tags.getStringOrDefault("ReplaceMode", ReplaceBehavior.NONE.name()));
-			PasteLayerBehavior layerBehavior = PasteLayerBehavior.fromStringStatic(tags.getStringOrDefault("PasteLayerBehavior", PasteLayerBehavior.ALL.name()));
-			LayerRange layerRange = tags.getCodec("RenderLayerRange", LayerRange.CODEC).orElse(null);
-			final boolean changedBlocksOnly = tags.getBooleanOrDefault("ChangedBlocksOnly", false);
-			final boolean ignoreBlocks = tags.getBooleanOrDefault("IgnoreBlocks", false);
-			final boolean ignoreEntities = tags.getBooleanOrDefault("IgnoreEntities", false);
-			final int interval = tags.getIntOrDefault("Interval", 1);
-			ServerLevel level = player.level();
-
-			// New Task Scheduler Paste
-			TaskContext ctx = new TaskContext(level.getServer(), level, player, placement.getName(), timeStart);
-			TaskPasteSchematicPerChunkBase task = new TaskPasteSchematicPerChunkDirect(ctx, Collections.singletonList(placement), layerRange, replaceMode, layerBehavior, changedBlocksOnly, ignoreBlocks, ignoreEntities);
-			TaskScheduler.getInstance().scheduleTask(task, interval);
-//			placement.pasteTo(level, replaceMode, layerBehavior, layerRange);
-
-//			if (this.shouldSendPlayerTaskFeedback())
-//			{
-//				final long timeElapsed = System.currentTimeMillis() - timeStart;
-//				player.sendSystemMessage(StringUtils.translate("servux.litematics.success.pasted", placement.getName(), player.level().dimension().identifier().toString(), timeElapsed), false);
-//			}
-		}
-		else
-		{
-			// LitematicaSchematic == null could also be sus ?
-			Servux.LOGGER.warn("handleClientPasteRequestPair: Error; Litematic provided by '{}' was null.", player.getName().tryCollapseToString());
-
-			if (this.shouldSendPlayerTaskFeedback())
-			{
-				player.sendSystemMessage(StringUtils.translate("servux.litematics.error.pasting"), false);
-			}
-		}
-	}
-
 	@Override
 	public boolean hasPermission(ServerPlayer player)
 	{

@@ -28,6 +28,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
+import mc.nala.servux.Servux;
 import mc.nala.servux.dataproviders.ServuxConfigProvider;
 import mc.nala.servux.util.PlacementHandler;
 
@@ -114,11 +115,16 @@ public class EasyPlace implements Listener
         ItemStack stack = CraftItemStack.asNMSCopy(event.getItemInHand());
         BlockHitResult hit = pending.encodedHit();
 
-        // The context upstream sees: the encoded hit, pointing at the block that was actually placed.
-        BlockPlaceContext ctx = new BlockPlaceContext(level, player, pending.hand(), stack,
-                                                      new BlockHitResult(hit.getLocation(), hit.getDirection(), pos, hit.isInside(), hit.isWorldBorderHit()));
+        // Upstream decodes inside getPlacementState, where the context holds the encoded packet hit and
+        // getClickedPos() is the position being placed. Now the block is already there, so vanilla would
+        // resolve getClickedPos() one block further; the placed position is passed explicitly instead.
+        BlockPlaceContext ctx = new BlockPlaceContext(level, player, pending.hand(), stack, hit);
+        PlacementHandler.UseContext useContext = new PlacementHandler.UseContext(level, pos, hit.getDirection(), hit.getLocation(),
+                                                                                 player, pending.hand(), ctx);
         net.minecraft.world.level.block.state.BlockState placed = level.getBlockState(pos);
-        net.minecraft.world.level.block.state.BlockState state = PlacementHandler.applyPlacementProtocolV3(placed, PlacementHandler.UseContext.from(ctx, pending.hand()));
+        net.minecraft.world.level.block.state.BlockState state = PlacementHandler.applyPlacementProtocolV3(placed, useContext);
+
+        Servux.debugLog("EasyPlace: {} at {}: placed {}, protocol result {}", event.getEventName(), pos.toShortString(), placed, state);
 
         if (state == null)
         {
