@@ -17,12 +17,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import mc.nala.servux.jei.ModIds;
 import mc.nala.servux.paper.PaperNetwork;
 
-/**
- * Port of Fabric API's RecipeSyncImpl.sendRecipes.
- * The synced serializers are the ones JEI registers on the client: every serializer in the minecraft namespace.
- * Fabric sends only the serializers that the client lists in the configuration phase; the JEI client lists
- * exactly these, so the payload is the same.
- */
+/** Fabric API RecipeSyncImpl.sendRecipes for the minecraft serializers (the set JEI registers). */
 public final class RecipeSync {
 	private RecipeSync() {
 	}

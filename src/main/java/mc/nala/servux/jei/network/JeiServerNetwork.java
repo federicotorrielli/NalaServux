@@ -15,11 +15,7 @@ import mc.nala.servux.jei.network.packets.legacy.PacketRecipeTransfer;
 import mc.nala.servux.jei.network.packets.legacy.PacketRecipeTransferCounted;
 import mc.nala.servux.paper.PaperNetwork;
 
-/**
- * Replaces mezz.jei.fabric.network.ServerNetworkHandler and ConnectionToClient.
- * The eight C2S channels are registered as plugin channels, so Paper declares them to the client,
- * which is how the JEI client decides that the server has JEI.
- */
+/** JEI's Fabric ServerNetworkHandler and ConnectionToClient on plugin channels. */
 public final class JeiServerNetwork implements IConnectionToClient {
 	private static final JeiServerNetwork CONNECTION = new JeiServerNetwork();
 

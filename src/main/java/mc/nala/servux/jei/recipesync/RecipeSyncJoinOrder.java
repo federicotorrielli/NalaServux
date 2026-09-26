@@ -17,13 +17,7 @@ import net.minecraft.network.HandlerNames;
 import net.minecraft.network.protocol.game.ClientboundUpdateRecipesPacket;
 import net.minecraft.server.level.ServerPlayer;
 
-/**
- * JEI decides whether the server synced recipes when it handles the first UpdateRecipesPacket.
- * A Fabric server sends fabric:recipe_sync before that packet (Fabric's PlayerListMixin). Paper sends
- * UpdateRecipesPacket before any plugin event, and the client only declares its play channels after the login packet.
- * This outbound handler holds the first UpdateRecipesPacket of a connection until the recipes are sent,
- * or at most {@link #TIMEOUT_MS} for clients that never declare fabric:recipe_sync.
- */
+/** Holds the first UpdateRecipesPacket until fabric:recipe_sync is sent (max 3 s); JEI checks recipes on that packet. */
 public final class RecipeSyncJoinOrder extends ChannelDuplexHandler {
 	private static final String NAME = "nalaservux_recipe_order";
 	private static final Key LISTENER_KEY = Key.key("nalaservux", "recipe_order");
@@ -39,8 +33,7 @@ public final class RecipeSyncJoinOrder extends ChannelDuplexHandler {
 
 	public static void install() {
 		ChannelInitializeListenerHolder.addListener(LISTENER_KEY, channel -> {
-			// A new server connection has "outbound_config" in the slot that later becomes "encoder".
-			// After it, towards the tail: outbound packets reach this handler before encoding.
+			// "outbound_config" becomes "encoder"; after it, packets arrive before encoding.
 			String anchor = channel.pipeline().get(HandlerNames.OUTBOUND_CONFIG) != null ? HandlerNames.OUTBOUND_CONFIG : HandlerNames.ENCODER;
 
 			if (channel.pipeline().get(anchor) != null) {
@@ -57,9 +50,7 @@ public final class RecipeSyncJoinOrder extends ChannelDuplexHandler {
 		ChannelInitializeListenerHolder.removeListener(LISTENER_KEY);
 	}
 
-	/**
-	 * Main thread. Sends the recipes, then releases the held packet; the channel event loop keeps this order.
-	 */
+	/** Main thread: send recipes, then release; the event loop keeps the order. */
 	public static void sendAndRelease(ServerPlayer player) {
 		if (!SENT.add(player.getUUID())) {
 			return;

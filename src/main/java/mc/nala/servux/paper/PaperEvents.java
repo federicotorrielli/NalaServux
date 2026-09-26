@@ -44,9 +44,7 @@ import mc.nala.servux.syncmatica.network.SyncmaticaPacket;
 import mc.nala.servux.syncmatica.network.actor.ServerConnection;
 import mc.nala.servux.syncmatica.network.handler.ServerPlayHandler;
 
-/**
- * Paper events that replace the upstream lifecycle, player and world mixins.
- */
+/** Replaces the upstream lifecycle, player and world mixins. */
 public class PaperEvents implements Listener
 {
     private static ServerHandler server() { return (ServerHandler) ServerHandler.getInstance(); }
@@ -142,7 +140,7 @@ public class PaperEvents implements Listener
         ServerPlayer player = ((CraftPlayer) event.getPlayer()).getHandle();
         PacketInterceptor.inject(player);
 
-        // The client may have declared fabric:recipe_sync during configuration, then no register event follows.
+        // Channel may have been declared during configuration (no register event then).
         if (RecipeSync.canSend(player))
         {
             RecipeSyncJoinOrder.sendAndRelease(player);

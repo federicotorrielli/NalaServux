@@ -13,10 +13,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 
-/**
- * Same semantics as fabric-permissions-api: an explicitly set node decides,
- * otherwise the vanilla permission level decides.
- */
+/** Like fabric-permissions-api: an explicitly set node wins, else the vanilla level. */
 public class PermissionsUtil
 {
 	public static @NotNull Predicate<CommandSourceStack> require(@NotNull String node, int level)

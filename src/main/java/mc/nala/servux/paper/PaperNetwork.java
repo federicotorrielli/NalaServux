@@ -19,18 +19,11 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 
-/**
- * Maps the Fabric networking calls of upstream onto Bukkit plugin channels.
- * <p>
- * C2S: Paper handles plugin messages on the main thread, the same as Fabric play payload receivers.
- * S2C: the payload is encoded and sent as a {@link DiscardedPayload}, the same packet that
- * {@code CraftPlayer.sendPluginMessage} builds, but without the 1 MiB Messenger size cap,
- * because upstream Servux slices are up to 1 MiB plus headers.
- */
+/** Plugin channels for C2S; S2C as raw DiscardedPayload (no 1 MiB Messenger cap, upstream slices are 1 MiB). */
 public class PaperNetwork
 {
     private static final Map<Identifier, PluginMessageListener> LISTENERS = new ConcurrentHashMap<>();
-    // Players who sent C2S on a channel can receive on it, even before Paper processed their channel registration.
+    // Players who sent C2S on a channel can receive on it, even before Paper registers the channel.
     private static final Map<Identifier, Set<UUID>> PROVEN_RECEIVERS = new ConcurrentHashMap<>();
 
     public static void registerChannel(Identifier channel, BiConsumer<ServerPlayer, RegistryFriendlyByteBuf> receiver)

@@ -32,17 +32,7 @@ import mc.nala.servux.Servux;
 import mc.nala.servux.dataproviders.ServuxConfigProvider;
 import mc.nala.servux.util.PlacementHandler;
 
-/**
- * Easy Place protocol V3. Upstream uses two mixins:
- * <ul>
- *   <li>MixinServerGamePacketListenerImpl_easyPlace removes the hit position range check,
- *       because the client encodes the wanted block state in the hit x coordinate.</li>
- *   <li>MixinBlockItem_EasyPlace applies {@link PlacementHandler#applyPlacementProtocolV3} in getPlacementState.</li>
- * </ul>
- * Here the netty thread rewrites the encoded x back into the block, so vanilla accepts the packet,
- * and keeps the original hit result under the packet sequence. The block is corrected in
- * {@link BlockPlaceEvent}, which fires inside handleUseItemOn after ackBlockChangesUpTo(sequence).
- */
+/** Easy Place V3: netty fixes the encoded hit, {@link BlockPlaceEvent} applies the state (upstream: two mixins). */
 public class EasyPlace implements Listener
 {
     private record Pending(BlockHitResult encodedHit, InteractionHand hand, long time) {}
@@ -64,9 +54,7 @@ public class EasyPlace implements Listener
         }
     }
 
-    /**
-     * Netty thread. Returns the packet that vanilla should handle.
-     */
+    /** Netty thread: returns the packet vanilla should handle. */
     public static ServerboundUseItemOnPacket onUseItemOn(UUID player, ServerboundUseItemOnPacket packet)
     {
         BlockHitResult hit = packet.getHitResult();
@@ -115,9 +103,7 @@ public class EasyPlace implements Listener
         ItemStack stack = CraftItemStack.asNMSCopy(event.getItemInHand());
         BlockHitResult hit = pending.encodedHit();
 
-        // Upstream decodes inside getPlacementState, where the context holds the encoded packet hit and
-        // getClickedPos() is the position being placed. Now the block is already there, so vanilla would
-        // resolve getClickedPos() one block further; the placed position is passed explicitly instead.
+        // The block is already placed, so pass its position explicitly (upstream: ctx.getClickedPos()).
         BlockPlaceContext ctx = new BlockPlaceContext(level, player, pending.hand(), stack, hit);
         PlacementHandler.UseContext useContext = new PlacementHandler.UseContext(level, pos, hit.getDirection(), hit.getLocation(),
                                                                                  player, pending.hand(), ctx);
@@ -140,7 +126,7 @@ public class EasyPlace implements Listener
 
         if (event instanceof BlockMultiPlaceEvent multi)
         {
-            // Beds, doors and tall plants: undo the other parts, then let setPlacedBy place them for the new state.
+            // Two-part blocks: undo the other part, setPlacedBy places it again.
             for (BlockState replaced : multi.getReplacedBlockStates())
             {
                 if (replaced.getX() != pos.getX() || replaced.getY() != pos.getY() || replaced.getZ() != pos.getZ())

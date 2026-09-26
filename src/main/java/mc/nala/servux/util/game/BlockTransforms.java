@@ -15,11 +15,7 @@ import net.minecraft.world.level.block.state.properties.StairsShape;
 
 import mc.nala.servux.dataproviders.LitematicsDataProvider;
 
-/**
- * Upstream patches ChestBlock.mirror, StairBlock.mirror and the rail rotate methods with mixins.
- * A plugin cannot patch them, so the schematic code calls these methods instead.
- * The logic is the same as in MixinChestBlock, MixinStairBlock and MixinRailBlocks.
- */
+/** The chest/stairs/rail mixin fixes, called by the schematic code. */
 public class BlockTransforms
 {
     public static BlockState mirror(BlockState state, Mirror mirror)

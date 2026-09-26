@@ -24,9 +24,7 @@ import mc.nala.servux.servux.ServuxInitHandler;
 import mc.nala.servux.syncmatica.Syncmatica;
 import mc.nala.servux.syncmatica.command.SyncmaticaCommand;
 
-/**
- * Plugin entry point. Replaces the upstream ModInitializer and the server lifecycle mixins.
- */
+/** Entry point; replaces the upstream initializers and lifecycle mixins. */
 public class NalaServuxPlugin extends JavaPlugin
 {
     private static NalaServuxPlugin instance;

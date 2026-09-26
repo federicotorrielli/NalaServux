@@ -21,10 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import mc.nala.servux.dataproviders.EntitiesDataProvider;
 
-/**
- * Netty handler that replaces the two ServerGamePacketListenerImpl mixins of upstream
- * (easy place hit check, NBT query permission override).
- */
+/** Replaces the upstream easy place and NBT query mixins on ServerGamePacketListenerImpl. */
 public class PacketInterceptor extends ChannelDuplexHandler
 {
     private static final Logger LOGGER = LoggerFactory.getLogger("servux");
@@ -70,7 +67,7 @@ public class PacketInterceptor extends ChannelDuplexHandler
         super.channelRead(ctx, msg);
     }
 
-    // Same body as ServerGamePacketListenerImpl.handleBlockEntityTagQuery, with the upstream permission override.
+    // Vanilla handleBlockEntityTagQuery with the upstream permission override.
     private void queryBlockEntity(ServerboundBlockEntityTagQueryPacket packet)
     {
         ServerPlayer player = MinecraftServer.getServer().getPlayerList().getPlayer(this.uuid);
@@ -83,7 +80,7 @@ public class PacketInterceptor extends ChannelDuplexHandler
         }
     }
 
-    // Same body as ServerGamePacketListenerImpl.handleEntityTagQuery, with the upstream permission override.
+    // Vanilla handleEntityTagQuery with the upstream permission override.
     private void queryEntity(ServerboundEntityTagQueryPacket packet)
     {
         ServerPlayer player = MinecraftServer.getServer().getPlayerList().getPlayer(this.uuid);

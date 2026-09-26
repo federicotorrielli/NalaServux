@@ -7,11 +7,7 @@ import java.util.WeakHashMap;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 
-/**
- * Upstream uses Level/LevelChunk mixins to skip {@code onPlace} while it pastes or fills.
- * Vanilla has the same switch as a setBlock flag, so the suppressed sections add
- * {@link Block#UPDATE_SKIP_ON_PLACE} to their flags through {@link #flags(Level, int)}.
- */
+/** Upstream skips onPlace with mixins; here suppressed sections add {@link Block#UPDATE_SKIP_ON_PLACE}. */
 public class WorldUtils
 {
     private static final Set<Level> PREVENT_UPDATES = Collections.newSetFromMap(new WeakHashMap<>());
