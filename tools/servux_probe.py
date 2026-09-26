@@ -277,7 +277,14 @@ def main():
             return 1
         elif pid == C_PLAY["custom_payload"]:
             channel = read_string(buf)
-            if channel.startswith("servux:") or channel.startswith("syncmatica:"):
+            if channel == "syncmatica:main":
+                sub = read_string(buf)
+                rest = buf.read()
+                print("%-22s %s %s" % (channel, sub, rest[:60]))
+                replies.setdefault(channel, []).append(sub)
+                if sub == "syncmatica:register_version":
+                    custom_payload(conn, S_PLAY["custom_payload"], channel, string(sub) + string("0.3.20"))
+            elif channel.startswith("servux:"):
                 ptype, content = describe(channel, buf.read())
                 replies.setdefault(channel, []).append(ptype)
                 print("%-22s type %-2d %s" % (channel, ptype, content))

@@ -1,6 +1,7 @@
 package mc.nala.servux.paper;
 
 import com.destroystokyo.paper.event.server.ServerTickEndEvent;
+import io.netty.buffer.Unpooled;
 import io.papermc.paper.event.packet.PlayerChunkLoadEvent;
 import io.papermc.paper.event.server.ServerResourcesReloadedEvent;
 import org.bukkit.craftbukkit.CraftChunk;
@@ -14,6 +15,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.event.world.SpawnChangeEvent;
 
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -28,6 +30,15 @@ import mc.nala.servux.dataproviders.StructureDataProvider;
 import mc.nala.servux.event.PlayerHandler;
 import mc.nala.servux.event.ServerHandler;
 import mc.nala.servux.scheduler.TaskScheduler;
+import mc.nala.servux.syncmatica.Context;
+import mc.nala.servux.syncmatica.Syncmatica;
+import mc.nala.servux.syncmatica.communication.ServerCommunicationManager;
+import mc.nala.servux.syncmatica.data.FileStorage;
+import mc.nala.servux.syncmatica.data.SyncmaticManager;
+import mc.nala.servux.syncmatica.network.PacketType;
+import mc.nala.servux.syncmatica.network.SyncmaticaPacket;
+import mc.nala.servux.syncmatica.network.actor.ServerConnection;
+import mc.nala.servux.syncmatica.network.handler.ServerPlayHandler;
 
 /**
  * Paper events that replace the upstream lifecycle, player and world mixins.
@@ -43,6 +54,10 @@ public class PaperEvents implements Listener
     public void onServerLoad(ServerLoadEvent event)
     {
         server().onServerStarted(MinecraftServer.getServer());
+
+        // Upstream Syncmatica: MixinMinecraftServer.runServer at buildServerStatus()
+        Syncmatica.initServer(new ServerCommunicationManager(), new FileStorage(), new SyncmaticManager(), false,
+                              NalaServuxPlugin.getInstance().getDataFolder().toPath()).startup();
     }
 
     // Upstream: MinecraftServer.reloadResources HEAD and TAIL
@@ -104,13 +119,26 @@ public class PaperEvents implements Listener
         ServerPlayer player = ((CraftPlayer) event.getPlayer()).getHandle();
         PacketInterceptor.inject(player);
         players().onPlayerJoin(player.connection.getRemoteAddress(), player.getGameProfile(), player);
+
+        // Upstream Syncmatica: ServerGamePacketListenerImpl.<init> TAIL, then PlayerList.placeNewPlayer TAIL
+        ServerConnection.onConnect(player);
+        Context syncmatica = Syncmatica.getContext(Syncmatica.SERVER_CONTEXT);
+
+        if (syncmatica != null && syncmatica.isStarted())
+        {
+            FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+            buf.writeUtf(mc.nala.servux.syncmatica.Reference.MOD_VERSION);
+            ServerPlayHandler.encodeSyncData(new SyncmaticaPacket(PacketType.REGISTER_VERSION.getId(), buf), player);
+        }
     }
 
     // Upstream: PlayerList.remove HEAD
     @EventHandler(priority = EventPriority.MONITOR)
     public void onQuit(PlayerQuitEvent event)
     {
-        players().onPlayerLeave(((CraftPlayer) event.getPlayer()).getHandle());
+        ServerPlayer player = ((CraftPlayer) event.getPlayer()).getHandle();
+        ServerConnection.onDisconnect(player);
+        players().onPlayerLeave(player);
         PaperNetwork.onPlayerQuit(event.getPlayer().getUniqueId());
     }
 }

@@ -18,6 +18,8 @@ import mc.nala.servux.dataproviders.HudDataProvider;
 import mc.nala.servux.event.ServerHandler;
 import mc.nala.servux.scheduler.TaskScheduler;
 import mc.nala.servux.servux.ServuxInitHandler;
+import mc.nala.servux.syncmatica.Syncmatica;
+import mc.nala.servux.syncmatica.command.SyncmaticaCommand;
 
 /**
  * Plugin entry point. Replaces the upstream ModInitializer and the server lifecycle mixins.
@@ -51,6 +53,7 @@ public class NalaServuxPlugin extends JavaPlugin
             CommandDispatcher<CommandSourceStack> dispatcher = (CommandDispatcher) event.registrar().getDispatcher();
             CommandBuildContext context = CommandBuildContext.simple(server.registryAccess(), server.getWorldData().enabledFeatures());
             ((CommandProvider) CommandProvider.getInstance()).registerCommands(dispatcher, context, Commands.CommandSelection.DEDICATED);
+            SyncmaticaCommand.INSTANCE.register(dispatcher, context, Commands.CommandSelection.DEDICATED);
         });
 
         // Upstream: MinecraftServer.runServer before initServer()
@@ -73,6 +76,7 @@ public class NalaServuxPlugin extends JavaPlugin
         MinecraftServer server = MinecraftServer.getServer();
 
         TaskScheduler.getInstance().clearTasks();
+        Syncmatica.shutdown();
         ((ServerHandler) ServerHandler.getInstance()).onServerStopping(server);
         ((ServerHandler) ServerHandler.getInstance()).onServerStopped(server);
         instance = null;

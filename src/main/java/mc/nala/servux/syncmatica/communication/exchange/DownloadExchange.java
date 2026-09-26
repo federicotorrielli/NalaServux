@@ -1,0 +1,161 @@
+package mc.nala.servux.syncmatica.communication.exchange;
+
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.DigestOutputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.UUID;
+import net.minecraft.network.FriendlyByteBuf;
+import mc.nala.servux.syncmatica.Context;
+import mc.nala.servux.syncmatica.Syncmatica;
+import mc.nala.servux.syncmatica.communication.ExchangeTarget;
+import mc.nala.servux.syncmatica.communication.MessageType;
+import mc.nala.servux.syncmatica.communication.ServerCommunicationManager;
+import mc.nala.servux.syncmatica.data.ServerPlacement;
+import mc.nala.servux.syncmatica.network.PacketType;
+import io.netty.buffer.Unpooled;
+
+public class DownloadExchange extends AbstractExchange
+{
+    private final ServerPlacement toDownload;
+    private final OutputStream outputStream;
+    private final MessageDigest md5;
+    private final Path downloadFile;
+    private int bytesSent;
+
+    public DownloadExchange(final ServerPlacement syncmatic, final Path downloadFile, final ExchangeTarget partner, final Context context) throws IOException, NoSuchAlgorithmException
+    {
+        super(partner, context);
+        this.downloadFile = downloadFile;
+        final OutputStream os = new FileOutputStream(downloadFile.toFile()); //NOSONAR
+        toDownload = syncmatic;
+        md5 = MessageDigest.getInstance("MD5");
+        outputStream = new DigestOutputStream(os, md5);
+    }
+
+    @Override
+    public boolean checkPacket(final PacketType type, final FriendlyByteBuf packetBuf)
+    {
+        if (type.equals(PacketType.SEND_LITEMATIC)
+                || type.equals(PacketType.FINISHED_LITEMATIC)
+                || type.equals(PacketType.CANCEL_LITEMATIC))
+        {
+            return checkUUID(packetBuf, toDownload.getId());
+        }
+        return false;
+    }
+
+    @Override
+    public void handle(final PacketType type, final FriendlyByteBuf packetBuf)
+    {
+        packetBuf.readUUID(); //skips the UUID
+        if (type.equals(PacketType.SEND_LITEMATIC))
+        {
+            final int size = packetBuf.readInt();
+            bytesSent += size;
+            if (getContext().isServer() && getContext().getQuotaService().isOverQuota(getPartner(), bytesSent))
+            {
+                close(true);
+                ((ServerCommunicationManager) getContext().getCommunicationManager()).sendMessage(
+                        getPartner(),
+                        MessageType.ERROR,
+                        "syncmatica.error.cancelled_transmit_exceed_quota"
+                );
+            }
+            try
+            {
+                packetBuf.readBytes(outputStream, size);
+            }
+            catch (final IOException e)
+            {
+                close(true);
+                e.printStackTrace();
+                return;
+            }
+            final FriendlyByteBuf packetByteBuf = new FriendlyByteBuf(Unpooled.buffer());
+            packetByteBuf.writeUUID(toDownload.getId());
+            getPartner().sendPacket(PacketType.RECEIVED_LITEMATIC, packetByteBuf, getContext());
+            return;
+        }
+        if (type.equals(PacketType.FINISHED_LITEMATIC))
+        {
+            try
+            {
+                outputStream.flush();
+            }
+            catch (final IOException e)
+            {
+                close(false);
+                e.printStackTrace();
+                return;
+            }
+            final UUID downloadHash = UUID.nameUUIDFromBytes(md5.digest());
+            if (downloadHash.equals(toDownload.getHash()))
+            {
+                succeed();
+            }
+            else
+            {
+                // no need to notify partner since exchange is closed on partner side
+                close(false);
+            }
+            return;
+        }
+        if (type.equals(PacketType.CANCEL_LITEMATIC))
+        {
+            close(false);
+        }
+    }
+
+    @Override
+    public void init()
+    {
+        final FriendlyByteBuf packetByteBuf = new FriendlyByteBuf(Unpooled.buffer());
+        packetByteBuf.writeUUID(toDownload.getId());
+        getPartner().sendPacket(PacketType.REQUEST_LITEMATIC, packetByteBuf, getContext());
+    }
+
+    @Override
+    protected void onClose()
+    {
+        getManager().setDownloadState(toDownload, false);
+        if (getContext().isServer() && isSuccessful())
+        {
+            getContext().getQuotaService().progressQuota(getPartner(), bytesSent);
+        }
+        try
+        {
+            outputStream.close();
+        }
+        catch (final IOException e)
+        {
+            e.printStackTrace();
+        }
+//        if (!isSuccessful() && downloadFile.exists())
+        if (!isSuccessful() && Files.exists(downloadFile))
+        {
+            try
+            {
+//                if (!downloadFile.delete())
+                Files.deleteIfExists(downloadFile);
+            }
+            catch (Exception err) {
+                Syncmatica.LOGGER.error("DownloadExchange#onClose(): failed to delete file: {}; exception {}", downloadFile.toString(), err.getLocalizedMessage());
+            }
+        }
+    }
+
+    @Override
+    protected void sendCancelPacket()
+    {
+        final FriendlyByteBuf packetByteBuf = new FriendlyByteBuf(Unpooled.buffer());
+        packetByteBuf.writeUUID(toDownload.getId());
+        getPartner().sendPacket(PacketType.CANCEL_LITEMATIC, packetByteBuf, getContext());
+    }
+
+    public ServerPlacement getPlacement() { return toDownload; }
+}
