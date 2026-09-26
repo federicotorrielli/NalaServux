@@ -198,6 +198,14 @@ def describe(channel, data):
             return ptype, read_network_nbt(buf)
         if channel == "servux:structures" and ptype == 2:
             return ptype, "slice of %d bytes" % len(buf.read())
+        if channel in ("servux:entity_data", "servux:litematics", "servux:tweaks") and ptype == 5:
+            buf.read(8)  # BlockPos
+            tag = read_data_tag(buf)
+            return ptype, "block entity %s, keys %s, Items %s" % (tag.get("id"), sorted(tag)[:8], tag.get("Items"))
+        if channel in ("servux:entity_data", "servux:litematics", "servux:tweaks") and ptype == 6:
+            read_varint(buf)  # entity id
+            tag = read_data_tag(buf)
+            return ptype, "entity, %d keys, Pos %s, has Inventory %s" % (len(tag), tag.get("Pos"), "Inventory" in tag)
         if ptype in (10, 11):
             return ptype, "slice of %d bytes" % len(buf.read())
         return ptype, read_data_tag(buf)
@@ -256,10 +264,15 @@ def main():
         except socket.timeout:
             continue
         if pid == C_PLAY["login"] and not sent:
+            entity_id = struct.unpack(">i", buf.read(4))[0]
             conn.send(S_PLAY["player_loaded"])
             for channel, (version, mtype) in CHANNELS.items():
                 custom_payload(conn, S_PLAY["custom_payload"], channel, varint(mtype) + network_nbt({"version": version}))
             custom_payload(conn, S_PLAY["custom_payload"], "jei:request_cheat_permission", b"")
+            # entity_data: block entity request (type 3, BlockPos) at the chest of paste_test.py, entity request (type 4) for ourselves
+            pos = ((14 & 0x3FFFFFF) << 38) | ((10 & 0x3FFFFFF) << 12) | (-59 & 0xFFF)
+            custom_payload(conn, S_PLAY["custom_payload"], "servux:entity_data", varint(3) + struct.pack(">Q", pos))
+            custom_payload(conn, S_PLAY["custom_payload"], "servux:entity_data", varint(4) + varint(entity_id))
             # HUD spawn data request (type 4, DataTag framing)
             custom_payload(conn, S_PLAY["custom_payload"], "servux:hud_metadata", varint(4) + data_tag({"version": 3}))
             sent = True

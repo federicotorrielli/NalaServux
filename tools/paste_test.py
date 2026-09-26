@@ -86,16 +86,19 @@ def schematic():
         {"Name": "minecraft:stone"},
         {"Name": "minecraft:powered_rail", "Properties": dict(rail, shape="ascending_east")},
         {"Name": "minecraft:powered_rail", "Properties": rail},
+        {"Name": "minecraft:chest", "Properties": {"facing": "north", "type": "single", "waterlogged": "false"}},
     ]
     # index = y * (sizeX * sizeZ) + z * sizeX + x
-    blocks = [1, 1, 1, 1,   # y=0
-              2, 1, 3, 3]   # y=1
+    blocks = [1, 1, 1, 1, 1,   # y=0
+              2, 1, 3, 3, 4]   # y=1
     region = {
         "Position": {"x": 0, "y": 0, "z": 0},
-        "Size": {"x": 4, "y": 2, "z": 1},
+        "Size": {"x": 5, "y": 2, "z": 1},
         "BlockStatePalette": palette,
-        "BlockStates": pack_states(blocks, 2),
-        "TileEntities": [],
+        "BlockStates": pack_states(blocks, 3),
+        "TileEntities": [{"x": 4, "y": 1, "z": 0, "id": "minecraft:chest",
+                          "Items": [{"Slot": Byte(0), "id": "minecraft:diamond", "count": 5},
+                                    {"Slot": Byte(26), "id": "minecraft:golden_apple", "count": 2}]}],
         "Entities": [],
         "PendingBlockTicks": [],
         "PendingFluidTicks": [],
@@ -106,7 +109,7 @@ def schematic():
         "Version": 7,
         "SubVersion": 1,
         "Metadata": {"Name": "rails", "Author": "probe", "Description": "", "RegionCount": 1,
-                     "TotalBlocks": 7, "TotalVolume": 8, "EnclosingSize": {"x": 4, "y": 2, "z": 1},
+                     "TotalBlocks": 9, "TotalVolume": 10, "EnclosingSize": {"x": 5, "y": 2, "z": 1},
                      "TimeCreated": now, "TimeModified": now},
         "Regions": {"Main": region},
     }
@@ -199,6 +202,9 @@ def main():
     for dx, what in ((0, "ascending_east"), (2, "north_south"), (3, "north_south")):
         console("execute if block %d %d %d minecraft:powered_rail[shape=%s] run say RAIL_OK x=%d %s" % (x + dx, y + 1, z, what, dx, what))
         console("execute unless block %d %d %d minecraft:powered_rail[shape=%s] run say RAIL_BAD x=%d expected %s" % (x + dx, y + 1, z, what, dx, what))
+    console("execute if items block %d %d %d container.0 minecraft:diamond[count=5] run say RAIL_OK chest slot 0 has 5 diamonds" % (x + 4, y + 1, z))
+    console("execute if items block %d %d %d container.26 minecraft:golden_apple run say RAIL_OK chest slot 26 has golden apples" % (x + 4, y + 1, z))
+    console("execute unless items block %d %d %d container.0 minecraft:diamond run say RAIL_BAD chest slot 0 is missing the diamonds" % (x + 4, y + 1, z))
     time.sleep(2)
     if log:
         with open(log) as fh:
