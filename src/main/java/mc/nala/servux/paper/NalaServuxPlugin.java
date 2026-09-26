@@ -16,6 +16,9 @@ import mc.nala.servux.commands.ServuxCommand;
 import mc.nala.servux.dataproviders.DataProviderManager;
 import mc.nala.servux.dataproviders.HudDataProvider;
 import mc.nala.servux.event.ServerHandler;
+import mc.nala.servux.jei.config.ServerConfig;
+import mc.nala.servux.jei.network.JeiServerNetwork;
+import mc.nala.servux.jei.recipesync.RecipeSyncJoinOrder;
 import mc.nala.servux.scheduler.TaskScheduler;
 import mc.nala.servux.servux.ServuxInitHandler;
 import mc.nala.servux.syncmatica.Syncmatica;
@@ -65,6 +68,10 @@ public class NalaServuxPlugin extends JavaPlugin
             HudDataProvider.INSTANCE.setSpawnPos(server.getWorldData().overworldData().getRespawnData().globalPos());
         }
 
+        // Upstream JEI: mezz.jei.fabric.JustEnoughItems.onInitialize
+        JeiServerNetwork.register(ServerConfig.getInstance());
+        RecipeSyncJoinOrder.install();
+
         this.getServer().getPluginManager().registerEvents(new PaperEvents(), this);
         this.getServer().getPluginManager().registerEvents(new EasyPlace(), this);
         Servux.LOGGER.info("{} enabled ({})", this.getName(), Reference.MOD_STRING);
@@ -75,6 +82,7 @@ public class NalaServuxPlugin extends JavaPlugin
     {
         MinecraftServer server = MinecraftServer.getServer();
 
+        RecipeSyncJoinOrder.uninstall();
         TaskScheduler.getInstance().clearTasks();
         Syncmatica.shutdown();
         ((ServerHandler) ServerHandler.getInstance()).onServerStopping(server);

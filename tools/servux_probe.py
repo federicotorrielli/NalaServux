@@ -22,7 +22,7 @@ PROTOCOL = 776  # 26.2
 # Packet ids from the vanilla data generator report (packets.json).
 C_CONFIG = {"custom_payload": 1, "disconnect": 2, "finish_configuration": 3, "keep_alive": 4, "ping": 5, "select_known_packs": 14}
 S_CONFIG = {"client_information": 0, "custom_payload": 2, "finish_configuration": 3, "keep_alive": 4, "pong": 5, "select_known_packs": 7}
-C_PLAY = {"custom_payload": 24, "disconnect": 32, "keep_alive": 44, "login": 49, "ping": 61, "player_position": 72, "system_chat": 121,
+C_PLAY = {"update_recipes": 133, "custom_payload": 24, "disconnect": 32, "keep_alive": 44, "login": 49, "ping": 61, "player_position": 72, "system_chat": 121,
           "chunk_batch_finished": 11, "start_configuration": 118}
 S_PLAY = {"accept_teleportation": 0, "chunk_batch_received": 11, "custom_payload": 22, "keep_alive": 28, "player_loaded": 44, "pong": 45}
 
@@ -226,7 +226,7 @@ def main():
             print("login disconnect:", buf.read())
             return 1
 
-    register = "\0".join(list(CHANNELS) + ["syncmatica:main"]).encode()
+    register = "\0".join(list(CHANNELS) + ["syncmatica:main", "fabric:recipe_sync", "jei:cheat_permission", "jei:recipe_transfer_result"]).encode()
     custom_payload(conn, S_CONFIG["custom_payload"], "minecraft:brand", string("fabric"))
     custom_payload(conn, S_CONFIG["custom_payload"], "minecraft:register", register)
 
@@ -259,6 +259,7 @@ def main():
             conn.send(S_PLAY["player_loaded"])
             for channel, (version, mtype) in CHANNELS.items():
                 custom_payload(conn, S_PLAY["custom_payload"], channel, varint(mtype) + network_nbt({"version": version}))
+            custom_payload(conn, S_PLAY["custom_payload"], "jei:request_cheat_permission", b"")
             # HUD spawn data request (type 4, DataTag framing)
             custom_payload(conn, S_PLAY["custom_payload"], "servux:hud_metadata", varint(4) + data_tag({"version": 3}))
             sent = True
@@ -270,6 +271,9 @@ def main():
             conn.send(S_PLAY["accept_teleportation"], varint(read_varint(buf)))
         elif pid == C_PLAY["chunk_batch_finished"]:
             conn.send(S_PLAY["chunk_batch_received"], struct.pack(">f", 25.0))
+        elif pid == C_PLAY["update_recipes"]:
+            print("update_recipes packet")
+            replies.setdefault("order", []).append("update_recipes")
         elif pid == C_PLAY["system_chat"]:
             print("chat:", buf.read()[:120])
         elif pid == C_PLAY["disconnect"]:
@@ -277,7 +281,13 @@ def main():
             return 1
         elif pid == C_PLAY["custom_payload"]:
             channel = read_string(buf)
-            if channel == "syncmatica:main":
+            if channel == "fabric:recipe_sync":
+                data = buf.read()
+                print("fabric:recipe_sync      %d bytes, %d serializer groups" % (len(data), data[0]))
+                replies.setdefault("order", []).append("recipe_sync")
+            elif channel.startswith("jei:"):
+                print("%-22s %s" % (channel, buf.read()[:80]))
+            elif channel == "syncmatica:main":
                 sub = read_string(buf)
                 rest = buf.read()
                 print("%-22s %s %s" % (channel, sub, rest[:60]))

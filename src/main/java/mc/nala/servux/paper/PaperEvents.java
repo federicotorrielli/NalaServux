@@ -12,6 +12,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerRegisterChannelEvent;
 import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.event.world.SpawnChangeEvent;
 
@@ -29,6 +30,9 @@ import mc.nala.servux.dataproviders.HudDataProvider;
 import mc.nala.servux.dataproviders.StructureDataProvider;
 import mc.nala.servux.event.PlayerHandler;
 import mc.nala.servux.event.ServerHandler;
+import mc.nala.servux.jei.recipesync.ClientboundRecipeSyncPayload;
+import mc.nala.servux.jei.recipesync.RecipeSync;
+import mc.nala.servux.jei.recipesync.RecipeSyncJoinOrder;
 import mc.nala.servux.scheduler.TaskScheduler;
 import mc.nala.servux.syncmatica.Context;
 import mc.nala.servux.syncmatica.Syncmatica;
@@ -67,6 +71,25 @@ public class PaperEvents implements Listener
         MinecraftServer mc = MinecraftServer.getServer();
         server().onServerResourceReloadPre(mc, mc.getResourceManager());
         server().onServerResourceReloadPost(mc, mc.getResourceManager(), true);
+
+        // Fabric API: ServerLifecycleEvents.SYNC_DATA_PACK_CONTENTS after a reload
+        for (ServerPlayer player : mc.getPlayerList().getPlayers())
+        {
+            if (RecipeSync.canSend(player))
+            {
+                RecipeSync.sendRecipes(player);
+            }
+        }
+    }
+
+    // Fabric API: SYNC_DATA_PACK_CONTENTS at join, gated on canSend(fabric:recipe_sync)
+    @EventHandler
+    public void onRegisterChannel(PlayerRegisterChannelEvent event)
+    {
+        if (event.getChannel().equals(ClientboundRecipeSyncPayload.CHANNEL.toString()))
+        {
+            RecipeSyncJoinOrder.sendAndRelease(((CraftPlayer) event.getPlayer()).getHandle());
+        }
     }
 
     // Upstream: MinecraftServer.tickServer RETURN, and ServerLevel.advanceWeatherCycle for the weather timers
@@ -118,6 +141,12 @@ public class PaperEvents implements Listener
     {
         ServerPlayer player = ((CraftPlayer) event.getPlayer()).getHandle();
         PacketInterceptor.inject(player);
+
+        // The client may have declared fabric:recipe_sync during configuration, then no register event follows.
+        if (RecipeSync.canSend(player))
+        {
+            RecipeSyncJoinOrder.sendAndRelease(player);
+        }
         players().onPlayerJoin(player.connection.getRemoteAddress(), player.getGameProfile(), player);
 
         // Upstream Syncmatica: ServerGamePacketListenerImpl.<init> TAIL, then PlayerList.placeNewPlayer TAIL
@@ -138,6 +167,7 @@ public class PaperEvents implements Listener
     {
         ServerPlayer player = ((CraftPlayer) event.getPlayer()).getHandle();
         ServerConnection.onDisconnect(player);
+        RecipeSyncJoinOrder.onQuit(player.getUUID());
         players().onPlayerLeave(player);
         PaperNetwork.onPlayerQuit(event.getPlayer().getUniqueId());
     }
