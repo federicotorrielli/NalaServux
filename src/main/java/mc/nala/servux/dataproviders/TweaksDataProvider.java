@@ -41,19 +41,14 @@ public class TweaksDataProvider extends DataProviderBase
     public static final TweaksDataProvider INSTANCE = new TweaksDataProvider();
 	private final static ServuxTweaksHandler<ServuxTweaksPacket.Payload> HANDLER = ServuxTweaksHandler.getInstance();
     private final CompoundData metadata = new CompoundData();
-    private final BoolCallbacks boolCallback = new BoolCallbacks();
     private final IntCallbacks intCallback = new IntCallbacks();
 	private final ServuxIntSetting permissionLevel = new ServuxIntSetting(this, "permission_level", 0, 4, 0, this.intCallback);
 	private final ServuxIntSetting updateInterval = new ServuxIntSetting(this, "update_interval", 120, 1200, 40, this.intCallback);
-	private final ServuxBoolSetting stackableShulkers = new ServuxBoolSetting(this, "stackable_shulkers", false, this.boolCallback);
-	private final ServuxIntSetting stackableShulkersSize = new ServuxIntSetting(this, "stackable_shulkers_count", 64, 99, 1, this.intCallback);
-	private final ServuxBoolSetting stackableShulkersFix = new ServuxBoolSetting(this, "stackable_shulkers_fix", true, this.boolCallback);
+	// stackable_shulkers, stackable_shulkers_count and stackable_shulkers_fix are not ported: they need the
+	// ItemStack.getMaxStackSize and HopperBlockEntity mixins, which a Paper plugin cannot apply.
 	private final List<IServuxSetting<?>> settings = List.of(
             this.permissionLevel,
-            this.updateInterval,
-            this.stackableShulkers,
-            this.stackableShulkersSize,
-            this.stackableShulkersFix
+            this.updateInterval
     );
 
     private final List<UUID> registeredPlayers = new ArrayList<>();
@@ -143,24 +138,15 @@ public class TweaksDataProvider extends DataProviderBase
 
     private void checkTweaksMetadata()
     {
-        // Only send the config when the Tweak is enabled;
-        // (ie; don't turn it off in case they are using Carpet)
-        if (this.shouldEmptyShulkersStack())
+        // Upstream only adds "stackingShulkers" when the tweak is on, and the tweak is not ported.
+        if (this.metadata.contains("stackingShulkers", Constants.NBT.TAG_BYTE))
         {
-            this.metadata.putBoolean("stackingShulkers", this.shouldEmptyShulkersStack());
-            this.metadata.putInt("stackingShulkersMax", this.stackableShulkersSize.getValue());
+            this.metadata.remove("stackingShulkers");
         }
-        else
-        {
-            if (this.metadata.contains("stackingShulkers", Constants.NBT.TAG_BYTE))
-            {
-                this.metadata.remove("stackingShulkers");
-            }
 
-            if (this.metadata.contains("stackingShulkersMax", Constants.NBT.TAG_INT))
-            {
-                this.metadata.remove("stackingShulkersMax");
-            }
+        if (this.metadata.contains("stackingShulkersMax", Constants.NBT.TAG_INT))
+        {
+            this.metadata.remove("stackingShulkersMax");
         }
     }
 
@@ -368,32 +354,7 @@ public class TweaksDataProvider extends DataProviderBase
 
     public boolean shouldEmptyShulkersStack()
     {
-        return this.stackableShulkers.getValue();
-    }
-
-    public boolean isStackableShulkersFixActive()
-    {
-        return this.shouldEmptyShulkersStack() && this.stackableShulkersFix.getValue();
-    }
-
-    public int defaultEmptyShulkersMaxCount()
-    {
-        if (this.shouldEmptyShulkersStack())
-        {
-            return this.stackableShulkersSize.getValue();
-        }
-
-        return 1;
-    }
-
-    public int getEmptyShulkersMaxCount(ItemStack stack)
-    {
-        if (this.shouldEmptyShulkersStack() && InventoryUtils.isShulkerBox(stack))
-        {
-            return this.defaultEmptyShulkersMaxCount();
-        }
-
-        return stack.getComponents().getOrDefault(DataComponents.MAX_STACK_SIZE, 1);
+        return false;
     }
 
 	@Override
@@ -403,16 +364,6 @@ public class TweaksDataProvider extends DataProviderBase
     }
 
     // Callbacks marks the config as dirty so that we can broadcast the config changes
-    public static class BoolCallbacks implements IServuxSettingCallback<Boolean>
-    {
-        @Override
-        public void onValueChanged(IServuxSetting<Boolean> setting, Boolean oldValue, Boolean value)
-        {
-            Servux.debugLog("Config Change detected; {}:{}", setting.dataProvider().getName(), setting.name());
-            TweaksDataProvider.INSTANCE.configDirty = true;
-        }
-    }
-
     public static class IntCallbacks implements IServuxSettingCallback<Integer>
     {
         @Override

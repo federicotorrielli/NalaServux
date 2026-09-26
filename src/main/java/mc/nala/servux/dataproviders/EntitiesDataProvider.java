@@ -36,7 +36,7 @@ public class EntitiesDataProvider extends DataProviderBase
 	private final ServuxIntSetting permissionLevel = new ServuxIntSetting(this, "permission_level", 0, 4, 0);
 	private final ServuxBoolSetting nbtQueryOverride = new ServuxBoolSetting(this, "nbt_query_override", false);
 	private final ServuxIntSetting nbtQueryPermissionLevel = new ServuxIntSetting(this, "nbt_query_permission_level", 2, 4, 0);
-	private final ServuxBoolSetting fixAllayGathering = new ServuxBoolSetting(this, "fix_allay_gathering", true);
+	// fix_allay_gathering is not ported: it needs the Allay, ItemEntity and Mob mixins, which a Paper plugin cannot apply.
 	private final ServuxBoolSetting nbtAllowPlayerInventory = new ServuxBoolSetting(this, "nbt_allow_player_inventory", true);
 	private final ServuxBoolSetting nbtAllowPlayerEnderItems = new ServuxBoolSetting(this, "nbt_allow_player_ender_items", true);
 	private final ServuxIntSetting playerInventoryPermissionLevel = new ServuxIntSetting(this, "player_inventory_permission_level", 2, 4, 0);
@@ -45,7 +45,6 @@ public class EntitiesDataProvider extends DataProviderBase
 			this.permissionLevel,
 			this.nbtQueryOverride,
 			this.nbtQueryPermissionLevel,
-			this.fixAllayGathering,
 			this.nbtAllowPlayerInventory,
 			this.nbtAllowPlayerEnderItems,
 			this.playerInventoryPermissionLevel,
@@ -285,11 +284,6 @@ public class EntitiesDataProvider extends DataProviderBase
     {
         return this.isEnabled() && this.nbtQueryOverride.getValue();
     }
-
-	public boolean hasFixAllayGathering()
-	{
-		return this.isEnabled() && this.fixAllayGathering.getValue();
-	}
 
 	/**
 	 * Tweaks Data Provider also uses the same settings here.

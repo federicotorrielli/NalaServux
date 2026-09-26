@@ -32,6 +32,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.ticks.LevelTicks;
 import net.minecraft.world.ticks.ScheduledTick;
 
+import mc.nala.servux.util.game.BlockTransforms;
 import mc.nala.servux.Servux;
 import mc.nala.servux.dataproviders.LitematicsDataProvider;
 import mc.nala.servux.schematic.LitematicaSchematic;
@@ -256,9 +257,9 @@ public class SchematicPlacingUtils
                         }
                     }
 
-                    if (mirrorMain != Mirror.NONE) { state = state.mirror(mirrorMain); }
-                    if (mirrorSub != Mirror.NONE)  { state = state.mirror(mirrorSub); }
-                    if (rotationCombined != Rotation.NONE) { state = state.rotate(rotationCombined); }
+                    if (mirrorMain != Mirror.NONE) { state = BlockTransforms.mirror(state, mirrorMain); }
+                    if (mirrorSub != Mirror.NONE)  { state = BlockTransforms.mirror(state, mirrorSub); }
+                    if (rotationCombined != Rotation.NONE) { state = BlockTransforms.rotate(state, rotationCombined); }
 
                     BlockEntity te = world.getBlockEntity(pos);
 

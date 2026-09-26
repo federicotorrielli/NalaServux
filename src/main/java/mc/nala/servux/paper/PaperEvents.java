@@ -102,6 +102,7 @@ public class PaperEvents implements Listener
     public void onJoin(PlayerJoinEvent event)
     {
         ServerPlayer player = ((CraftPlayer) event.getPlayer()).getHandle();
+        PacketInterceptor.inject(player);
         players().onPlayerJoin(player.connection.getRemoteAddress(), player.getGameProfile(), player);
     }
 

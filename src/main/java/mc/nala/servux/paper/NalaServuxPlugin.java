@@ -63,6 +63,7 @@ public class NalaServuxPlugin extends JavaPlugin
         }
 
         this.getServer().getPluginManager().registerEvents(new PaperEvents(), this);
+        this.getServer().getPluginManager().registerEvents(new EasyPlace(), this);
         Servux.LOGGER.info("{} enabled ({})", this.getName(), Reference.MOD_STRING);
     }
 
