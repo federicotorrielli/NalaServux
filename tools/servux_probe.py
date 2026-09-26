@@ -197,7 +197,13 @@ def describe(channel, data):
         if ptype == 1 or (channel == "servux:structures" and ptype == 1):
             return ptype, read_network_nbt(buf)
         if channel == "servux:structures" and ptype == 2:
-            return ptype, "slice of %d bytes" % len(buf.read())
+            total = read_varint(buf)
+            rest = buf.read()
+            if len(rest) >= total:
+                tag = read_data_tag(io.BytesIO(rest))
+                ids = sorted({s.get("id") for s in tag.get("Structures", [])})
+                return ptype, "%d structures %s" % (len(tag.get("Structures", [])), ids)
+            return ptype, "first slice of %d / %d bytes" % (len(rest), total)
         if channel in ("servux:entity_data", "servux:litematics", "servux:tweaks") and ptype == 5:
             buf.read(8)  # BlockPos
             tag = read_data_tag(buf)
