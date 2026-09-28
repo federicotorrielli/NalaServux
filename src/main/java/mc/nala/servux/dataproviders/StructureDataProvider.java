@@ -189,7 +189,7 @@ public class StructureDataProvider extends DataProviderBase
 
 		if (this.playerPositons.containsKey(uuid))
 		{
-			this.addChunkTimeoutIfHasReferences(uuid, chunk, player.createCommandSourceStack().getServer().getTickCount());
+			this.addChunkTimeoutIfHasReferences(uuid, chunk, player.level().getServer().getTickCount());
 		}
 	}
 
@@ -321,7 +321,8 @@ public class StructureDataProvider extends DataProviderBase
 	{
 		final ChunkPos pos = chunk.getPos();
 
-		if (this.chunkHasStructureReferences(pos.x(), pos.z(), chunk.getLevel()))
+		// The event already has the chunk; upstream looked it up again by position.
+		if (this.chunkHasStructureReferences(chunk))
 		{
 			final Map<ChunkPos, Timeout> map = this.timeouts.computeIfAbsent(uuid, (u) -> new HashMap<>());
 
@@ -462,17 +463,11 @@ public class StructureDataProvider extends DataProviderBase
 		}
 	}
 
-	protected boolean chunkHasStructureReferences(int chunkX, int chunkZ, Level world)
+	protected boolean chunkHasStructureReferences(ChunkAccess chunk)
 	{
-		if (!world.hasChunk(chunkX, chunkZ)) { return false; }
-
-		ChunkAccess chunk = world.getChunk(chunkX, chunkZ, ChunkStatus.STRUCTURE_REFERENCES, false);
-
-		if (chunk == null) { return false; }
-
-		for (Map.Entry<Structure, LongSet> entry : chunk.getAllReferences().entrySet())
+		for (LongSet refs : chunk.getAllReferences().values())
 		{
-			if (!entry.getValue().isEmpty()) { return true; }
+			if (!refs.isEmpty()) { return true; }
 		}
 
 		return false;

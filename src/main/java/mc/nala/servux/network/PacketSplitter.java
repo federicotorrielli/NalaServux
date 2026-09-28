@@ -79,9 +79,8 @@ public class PacketSplitter
 		for (int offset = 0; offset < len; offset += payloadLimit)
 		{
 			int thisLen = Math.min(len - offset, payloadLimit);
-			FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer(thisLen));
-
-			buf.resetWriterIndex();
+			// Room for the VarInt length header, so the first slice does not reallocate.
+			FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer(thisLen + 5));
 
 			if (offset == 0)
 			{

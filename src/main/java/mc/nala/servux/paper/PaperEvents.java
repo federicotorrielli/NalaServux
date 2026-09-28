@@ -128,8 +128,13 @@ public class PaperEvents implements Listener
         if (StructureDataProvider.INSTANCE.isEnabled())
         {
             ServerPlayer player = ((CraftPlayer) event.getPlayer()).getHandle();
-            LevelChunk chunk = (LevelChunk) ((CraftChunk) event.getChunk()).getHandle(net.minecraft.world.level.chunk.status.ChunkStatus.FULL);
-            StructureDataProvider.INSTANCE.onStartedWatchingChunk(player, chunk);
+
+            // Most players have no MiniHUD; skip the chunk lookup for them.
+            if (StructureDataProvider.INSTANCE.isPlayerRegistered(player))
+            {
+                LevelChunk chunk = (LevelChunk) ((CraftChunk) event.getChunk()).getHandle(net.minecraft.world.level.chunk.status.ChunkStatus.FULL);
+                StructureDataProvider.INSTANCE.onStartedWatchingChunk(player, chunk);
+            }
         }
     }
 

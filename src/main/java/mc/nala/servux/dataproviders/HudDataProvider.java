@@ -438,13 +438,14 @@ public class HudDataProvider extends DataProviderBase
 		this.registeredPlayers.add(uuid);
 
 		// Sends Metadata handshake, it doesn't succeed the first time, so using networkHandler
+		// Send the filtered copy; upstream sent this.metadata, with the seed.
 		if (player.connection != null)
 		{
-			HANDLER.sendPlayPayload(player.connection, new ServuxHudPacket.Payload(ServuxHudPacket.MetadataResponse(this.metadata)));
+			HANDLER.sendPlayPayload(player.connection, new ServuxHudPacket.Payload(ServuxHudPacket.MetadataResponse(nbt)));
 		}
 		else
 		{
-			HANDLER.sendPlayPayload(player, new ServuxHudPacket.Payload(ServuxHudPacket.MetadataResponse(this.metadata)));
+			HANDLER.sendPlayPayload(player, new ServuxHudPacket.Payload(ServuxHudPacket.MetadataResponse(nbt)));
 		}
 	}
 

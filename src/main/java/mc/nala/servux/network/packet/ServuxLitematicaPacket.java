@@ -169,7 +169,7 @@ public class ServuxLitematicaPacket implements IServerPayloadData
 	public static ServuxLitematicaPacket ResponseS2CData(@Nonnull FriendlyByteBuf buffer)
 	{
 		var packet = new ServuxLitematicaPacket(Type.PACKET_S2C_NBT_RESPONSE_DATA);
-		packet.buffer = new FriendlyByteBuf(buffer.copy());
+		packet.buffer = buffer;
 		packet.nbt = new CompoundData();
 		return packet;
 	}
@@ -355,7 +355,7 @@ public class ServuxLitematicaPacket implements IServerPayloadData
 				// Write Packet Buffer (Slice)
 				try
 				{
-					output.writeBytes(this.buffer.copy());
+					output.writeBytes(this.buffer, this.buffer.readerIndex(), this.buffer.readableBytes());
 				}
 				catch (Exception e)
 				{
@@ -646,7 +646,7 @@ public class ServuxLitematicaPacket implements IServerPayloadData
 	@Nullable
 	public static Type getType(int input)
 	{
-		for (Type type : Type.values())
+		for (Type type : Type.VALUES)
 		{
 			if (type.get() == input)
 			{
@@ -680,6 +680,7 @@ public class ServuxLitematicaPacket implements IServerPayloadData
 		PACKET_C2S_TASK_CANCEL(17),
 		;
 
+		private static final Type[] VALUES = values();
 		private final int type;
 
 		Type(int type)

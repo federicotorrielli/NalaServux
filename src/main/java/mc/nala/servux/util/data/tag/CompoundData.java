@@ -467,11 +467,14 @@ public class CompoundData extends BaseData implements DataView
         return copy;
     }
 
+    /**
+     * Merges {@code other} into this compound and returns this (upstream returned a deep copy that every caller discarded).
+     */
     public CompoundData combine(CompoundData other)
     {
         if (other == null || other.isEmpty())
         {
-            return this.copy();
+            return this;
         }
 
         for (String key : other.values.keySet())
@@ -490,7 +493,7 @@ public class CompoundData extends BaseData implements DataView
             this.values.put(key, data);
         }
 
-        return this.copy();
+        return this;
     }
 
     @Override

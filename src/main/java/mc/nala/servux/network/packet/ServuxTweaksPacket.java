@@ -286,7 +286,7 @@ public class ServuxTweaksPacket implements IServerPayloadData
 				// Write Packet Buffer (Slice)
 				try
 				{
-					output.writeBytes(this.buffer.copy());
+					output.writeBytes(this.buffer, this.buffer.readerIndex(), this.buffer.readableBytes());
 				}
 				catch (Exception e)
 				{
@@ -492,7 +492,7 @@ public class ServuxTweaksPacket implements IServerPayloadData
 	@Nullable
 	public static Type getType(int input)
 	{
-		for (Type type : Type.values())
+		for (Type type : Type.VALUES)
 		{
 			if (type.get() == input)
 			{
@@ -519,6 +519,7 @@ public class ServuxTweaksPacket implements IServerPayloadData
 		PACKET_C2S_NBT_RESPONSE_START(12),
 		PACKET_C2S_NBT_RESPONSE_DATA(13);
 
+		private static final Type[] VALUES = values();
 		private final int type;
 
 		Type(int type)

@@ -17,6 +17,8 @@ public class ListData extends BaseData implements ArrayData
 {
     public static final String TAG_NAME = "TAG_List";
     protected final ArrayList<BaseData> list;
+    // Cached result of getContainedType(); -1 means not computed.
+    private int containedType = -1;
 
     public ListData()
     {
@@ -34,6 +36,11 @@ public class ListData extends BaseData implements ArrayData
     // calculates the Contained Type based on the data added to it.
     public int getContainedType()
     {
+        if (this.containedType >= 0)
+        {
+            return this.containedType;
+        }
+
         int type = Constants.NBT.TAG_END;
 
         for (BaseData entry : this.list)
@@ -46,10 +53,12 @@ public class ListData extends BaseData implements ArrayData
             }
             else if (type != dataType)
             {
-                return Constants.NBT.TAG_COMPOUND;
+                type = Constants.NBT.TAG_COMPOUND;
+                break;
             }
         }
 
+        this.containedType = type;
         return type;
     }
 
@@ -63,6 +72,7 @@ public class ListData extends BaseData implements ArrayData
     public void clear()
     {
         this.list.clear();
+        this.containedType = -1;
     }
 
     @Override
@@ -114,6 +124,7 @@ public class ListData extends BaseData implements ArrayData
     {
         if (index < this.list.size())
         {
+            this.containedType = -1;
             return this.list.remove(index);
         }
 
@@ -131,6 +142,7 @@ public class ListData extends BaseData implements ArrayData
         }
 
         this.list.add(entry);
+        this.containedType = entry.getType();
         return true;
     }
 
@@ -301,7 +313,14 @@ public class ListData extends BaseData implements ArrayData
 
         int tagType = input.readByte();
         int len = input.readInt();
-        sizeTracker.increment(Byte.BYTES + Integer.BYTES);
+
+        if (len < 0)
+        {
+            throw new IOException("Invalid list length: " + len);
+        }
+
+        // Charge the backing array before allocating it, like vanilla ListTag.
+        sizeTracker.increment(Byte.BYTES + Integer.BYTES + (long) len * Integer.BYTES);
 
         if (tagType == Constants.NBT.TAG_END && len > 0)
         {

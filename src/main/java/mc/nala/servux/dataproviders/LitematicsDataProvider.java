@@ -627,7 +627,8 @@ public class LitematicsDataProvider extends DataProviderBase
 			SchematicPlacement placement = SchematicPlacement.createFromData(tags);
 			ReplaceBehavior replaceMode = ReplaceBehavior.fromStringStatic(tags.getStringOrDefault("ReplaceMode", ReplaceBehavior.NONE.name()));
 			PasteLayerBehavior layerBehavior = PasteLayerBehavior.fromStringStatic(tags.getStringOrDefault("PasteLayerBehavior", PasteLayerBehavior.ALL.name()));
-			LayerRange layerRange = tags.getCodec("RenderLayerRange", LayerRange.CODEC).orElse(null);
+			// Missing range means all layers; upstream passed null, which the paste task dereferences.
+			LayerRange layerRange = tags.getCodec("RenderLayerRange", LayerRange.CODEC).orElseGet(LayerRange::new);
 			final boolean changedBlocksOnly = tags.getBooleanOrDefault("ChangedBlocksOnly", false);
 			final boolean ignoreBlocks = tags.getBooleanOrDefault("IgnoreBlocks", false);
 			final boolean ignoreEntities = tags.getBooleanOrDefault("IgnoreEntities", false);

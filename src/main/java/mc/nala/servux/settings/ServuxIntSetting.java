@@ -89,7 +89,8 @@ public class ServuxIntSetting extends AbstractServuxSetting<Integer>
 
             if (value.isNumber())
             {
-                this.setValueNoCallback(value.getAsInt());
+                // Clamp like the command path does; upstream trusted the file (update_interval 0 threw every tick).
+                this.setValueNoCallback(Math.clamp(value.getAsLong(), this.minValue, this.maxValue));
             }
         }
     }

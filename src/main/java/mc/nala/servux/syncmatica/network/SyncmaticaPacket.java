@@ -44,7 +44,7 @@ public class SyncmaticaPacket
     protected void toPacket(FriendlyByteBuf output)
     {
         output.writeIdentifier(this.channel);
-        output.writeBytes(this.packet.copy());
+        output.writeBytes(this.packet, this.packet.readerIndex(), this.packet.readableBytes());
     }
 
     public record Payload(SyncmaticaPacket data) implements CustomPacketPayload

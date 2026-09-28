@@ -28,8 +28,14 @@ public class ServerCommunicationManager extends CommunicationManager
     public GameProfile getGameProfile(final ExchangeTarget exchangeTarget) { return playerMap.get(exchangeTarget).getGameProfile(); }
 
     @Nullable
-    public ExchangeTarget fromExistingPlayer(final ServerPlayer player)
+    public ExchangeTarget fromExistingPlayer(@Nullable final ServerPlayer player)
     {
+        // The console has no player (upstream threw NPE here).
+        if (player == null)
+        {
+            return null;
+        }
+
         AtomicReference<ExchangeTarget> newTarget = new AtomicReference<>();
 
         this.playerMap.forEach(

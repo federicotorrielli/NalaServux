@@ -133,7 +133,7 @@ public class ServuxHudPacket implements IServerPayloadData
 	public static ServuxHudPacket ResponseS2CData(@Nonnull FriendlyByteBuf buffer)
 	{
 		var packet = new ServuxHudPacket(Type.PACKET_S2C_NBT_RESPONSE_DATA);
-		packet.buffer = new FriendlyByteBuf(buffer.copy());
+		packet.buffer = buffer;
 		packet.nbt = new CompoundData();
 		return packet;
 	}
@@ -235,7 +235,7 @@ public class ServuxHudPacket implements IServerPayloadData
 				// Write Packet Buffer (Slice)
 				try
 				{
-					output.writeBytes(this.buffer.copy());
+					output.writeBytes(this.buffer, this.buffer.readerIndex(), this.buffer.readableBytes());
 				}
 				catch (Exception e)
 				{
@@ -471,7 +471,7 @@ public class ServuxHudPacket implements IServerPayloadData
 	@Nullable
 	public static Type getType(int input)
 	{
-		for (Type type : Type.values())
+		for (Type type : Type.VALUES)
 		{
 			if (type.get() == input)
 			{
@@ -497,6 +497,7 @@ public class ServuxHudPacket implements IServerPayloadData
 		PACKET_S2C_NBT_RESPONSE_START(10),
 		PACKET_S2C_NBT_RESPONSE_DATA(11);
 
+		private static final Type[] VALUES = values();
 		private final int type;
 
 		Type(int type)

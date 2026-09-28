@@ -6,6 +6,8 @@ import com.google.common.collect.ImmutableList;
 
 import net.minecraft.util.profiling.ProfilerFiller;
 
+import mc.nala.servux.Servux;
+
 public class TaskScheduler
 {
 	private static final TaskScheduler INSTANCE = new TaskScheduler();
@@ -23,8 +25,7 @@ public class TaskScheduler
 
 			if (this.tasks.isEmpty())
 			{
-				task.init();
-				this.tasks.add(task);
+				this.initAndAdd(task);
 			}
 			else
 			{
@@ -46,13 +47,22 @@ public class TaskScheduler
 					boolean finished = false;
 					ITask task = this.tasks.get(i);
 
-					if (task.shouldRemove())
+					// A throwing task is dropped; upstream rethrew it every tick and starved the rest.
+					try
 					{
-						finished = true;
+						if (task.shouldRemove())
+						{
+							finished = true;
+						}
+						else if (task.canExecute() && task.getTimer().tick())
+						{
+							finished = task.execute(profiler);
+						}
 					}
-					else if (task.canExecute() && task.getTimer().tick())
+					catch (Exception e)
 					{
-						finished = task.execute(profiler);
+						Servux.LOGGER.error("TaskScheduler: task '{}' failed, removing it", task.getDisplayName(), e);
+						finished = true;
 					}
 
 					if (finished)
@@ -75,14 +85,25 @@ public class TaskScheduler
 
 	private void addNewTasks()
 	{
-		for (int i = 0; i < this.tasksToAdd.size(); ++i)
+		for (ITask task : this.tasksToAdd)
 		{
-			ITask task = this.tasksToAdd.get(i);
-			task.init();
-			this.tasks.add(task);
+			this.initAndAdd(task);
 		}
 
 		this.tasksToAdd.clear();
+	}
+
+	private void initAndAdd(ITask task)
+	{
+		try
+		{
+			task.init();
+			this.tasks.add(task);
+		}
+		catch (Exception e)
+		{
+			Servux.LOGGER.error("TaskScheduler: task '{}' failed to start", task.getDisplayName(), e);
+		}
 	}
 
 	public boolean hasTask(Class <? extends ITask> clazz)

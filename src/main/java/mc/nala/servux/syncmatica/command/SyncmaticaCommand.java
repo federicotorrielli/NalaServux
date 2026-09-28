@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.annotation.Nullable;
 import mc.nala.servux.syncmatica.Context;
 import mc.nala.servux.syncmatica.Reference;
 import mc.nala.servux.syncmatica.Syncmatica;
@@ -113,10 +114,9 @@ public class SyncmaticaCommand implements IServerCommand
         list.forEach(
                 (p) ->
                 {
-                    String name = ServerPlacement.removeExtension(p.getFileName());
-                    UUID hash = UUID.fromString(name);
+                    UUID hash = hashFromFileName(p);
 
-                    if (!context.getSyncmaticManager().hasPlacementHash(hash))
+                    if (hash != null && !context.getSyncmaticManager().hasPlacementHash(hash))
                     {
                         Pair<SchematicMetadata, SchematicSchema> pair = SyncmaticaUtil.litematicPeek(p);
 
@@ -127,6 +127,28 @@ public class SyncmaticaCommand implements IServerCommand
                         }
                     }
                 });
+    }
+
+    // Files are named <hash>.litematic; others are skipped (upstream threw and Syncmatica never started).
+    @Nullable
+    private static UUID hashFromFileName(Path file)
+    {
+        String name = file.getFileName().toString();
+        int dot = name.lastIndexOf('.');
+
+        try
+        {
+            if (dot > 0)
+            {
+                return UUID.fromString(name.substring(0, dot));
+            }
+        }
+        catch (IllegalArgumentException ignored)
+        {
+        }
+
+        Syncmatica.LOGGER.warn("updateSyncmaticDir(): skipping '{}', the name is not a placement hash", name);
+        return null;
     }
 
     private Component formatTooltip(SchematicMetadata meta)
