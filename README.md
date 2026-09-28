@@ -1,15 +1,15 @@
 # NalaServux
 
-Servux, Syncmatica and JEI server side for Paper/Purpur 26.2, built for Nala Mc.
+Servux, Syncmatica and JEI server side, hyperoptimized for Paper/Purpur 26.2.
+It works on my server so... it should work on yours too!
 
 Ports [Servux](https://github.com/sakura-ryoko/servux) 0.11.6, [Syncmatica](https://github.com/sakura-ryoko/syncmatica) 0.3.20 and the [JEI](https://github.com/mezz/JustEnoughItems) server code (branch 26.2).
-Upstream files are kept 1:1 under `mc.nala.servux`; Fabric and mixin parts are replaced in `paper/`.
 
-Not ported (need bytecode patches): stackable shulkers, allay gathering fix. The Litematica file transmit code is removed.
+Not ported (need bytecode patches): stackable shulkers, allay gathering fix. The Litematica file transmit code was intentionally removed.
 
 ## Use
 
-Drop the jar in `plugins/`. Config lives in `plugins/NalaServux/`. Commands: `/servux`, `/syncmatica`.
+Drop the jar in `plugins/`. Config is in `plugins/NalaServux/`. Commands: `/servux`, `/syncmatica`.
 
 ## Build and test
 
